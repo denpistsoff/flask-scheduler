@@ -1,0 +1,105 @@
+<!-- index.html -->
+{% extends 'base.html' %}
+
+{% block title %}Главная{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="welcome-card">
+        <h1><i class="fas fa-calendar-check"></i> Smart Scheduler</h1>
+        <p class="subtitle">Система автоматического составления учебного расписания</p>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <i class="fas fa-chalkboard-teacher"></i>
+                <h3 id="teachers-count">{{ stats.teachers }}</h3>
+                <p>Преподавателей</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-users"></i>
+                <h3 id="groups-count">{{ stats.groups }}</h3>
+                <p>Групп</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-book"></i>
+                <h3 id="courses-count">{{ stats.courses }}</h3>
+                <p>Курсов</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-building"></i>
+                <h3 id="rooms-count">{{ stats.rooms }}</h3>
+                <p>Аудиторий</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="action-cards">
+        <div class="card">
+            <h3><i class="fas fa-play-circle"></i> Быстрый старт</h3>
+            <p>Начните с настройки системы</p>
+            <a href="/setup" class="btn btn-primary btn-block">
+                <i class="fas fa-sliders-h"></i> Настроить систему
+            </a>
+        </div>
+
+        <div class="card">
+            <h3><i class="fas fa-bolt"></i> Создать расписание</h3>
+            <p>Сгенерировать автоматически</p>
+            <button onclick="generateSchedule()" class="btn btn-success btn-block">
+                <i class="fas fa-magic"></i> Сгенерировать
+            </button>
+        </div>
+
+        <div class="card">
+            <h3><i class="fas fa-tasks"></i> Управление данными</h3>
+            <p>Редактировать преподавателей, группы, курсы</p>
+            <a href="/manage" class="btn btn-info btn-block">
+                <i class="fas fa-edit"></i> Управление
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+async function generateSchedule() {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Генерация...';
+
+    try {
+        const response = await fetch('/api/generate-schedule', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            setTimeout(() => {
+                window.location.href = '/schedule';
+            }, 1500);
+        }
+    } catch (error) {
+        console.error('Error generating schedule:', error);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-magic"></i> Сгенерировать';
+    }
+}
+
+async function updateStats() {
+    try {
+        const response = await fetch('/api/stats');
+        const stats = await response.json();
+
+        document.getElementById('teachers-count').textContent = stats.teachers;
+        document.getElementById('groups-count').textContent = stats.groups;
+        document.getElementById('courses-count').textContent = stats.courses;
+        document.getElementById('rooms-count').textContent = stats.rooms;
+    } catch (error) {
+        console.error('Error updating stats:', error);
+    }
+}
+
+setInterval(updateStats, 5000);
+</script>
+{% endblock %}

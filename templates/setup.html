@@ -1,0 +1,679 @@
+<!-- setup.html -->
+{% extends 'base.html' %}
+
+{% block title %}Настройка системы{% endblock %}
+
+{% block content %}
+{% if not current_user.is_authenticated %}
+<script>
+    window.location.href = "{{ url_for('login') }}";
+</script>
+{% endif %}
+
+<div class="setup-container">
+    <div class="setup-header">
+        <h1><i class="fas fa-cogs"></i> Настройка системы</h1>
+        <p class="setup-subtitle">Добавьте всех преподавателей, группы, аудитории и курсы</p>
+    </div>
+
+    <div class="setup-grid">
+        <!-- Преподаватели -->
+        <div class="setup-card">
+            <div class="setup-card-header">
+                <h3><i class="fas fa-chalkboard-teacher"></i> Преподаватели</h3>
+                <span class="badge" id="teacher-count">0</span>
+            </div>
+            <div class="setup-form">
+                <div class="form-row">
+                    <input type="text" id="teacher-name" placeholder="ФИО преподавателя" class="form-input">
+                </div>
+                <div class="form-row">
+                    <input type="number" id="teacher-hours" placeholder="Макс часов в день" value="4" min="1" max="8" class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Предпочитаемые дни занятий</label>
+                    <div class="days-selector">
+                        <div class="day-checkbox" data-day="1">
+                            <input type="checkbox" id="day-mon" name="day-mon" value="1">
+                            <label for="day-mon">
+                                <i class="fas fa-calendar-day"></i>
+                                <span>Пн</span>
+                            </label>
+                        </div>
+                        <div class="day-checkbox" data-day="2">
+                            <input type="checkbox" id="day-tue" name="day-tue" value="2">
+                            <label for="day-tue">
+                                <i class="fas fa-calendar-day"></i>
+                                <span>Вт</span>
+                            </label>
+                        </div>
+                        <div class="day-checkbox" data-day="3">
+                            <input type="checkbox" id="day-wed" name="day-wed" value="3">
+                            <label for="day-wed">
+                                <i class="fas fa-calendar-day"></i>
+                                <span>Ср</span>
+                            </label>
+                        </div>
+                        <div class="day-checkbox" data-day="4">
+                            <input type="checkbox" id="day-thu" name="day-thu" value="4">
+                            <label for="day-thu">
+                                <i class="fas fa-calendar-day"></i>
+                                <span>Чт</span>
+                            </label>
+                        </div>
+                        <div class="day-checkbox" data-day="5">
+                            <input type="checkbox" id="day-fri" name="day-fri" value="5">
+                            <label for="day-fri">
+                                <i class="fas fa-calendar-day"></i>
+                                <span>Пт</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="addTeacher()" class="form-btn btn-primary">
+                    <i class="fas fa-plus"></i> Добавить преподавателя
+                </button>
+            </div>
+            <div class="setup-list" id="teachers-list"></div>
+        </div>
+
+        <!-- Группы -->
+        <div class="setup-card">
+            <div class="setup-card-header">
+                <h3><i class="fas fa-users"></i> Группы студентов</h3>
+                <span class="badge" id="group-count">0</span>
+            </div>
+            <div class="setup-form">
+                <div class="form-row">
+                    <input type="text" id="group-name" placeholder="Название группы" class="form-input">
+                </div>
+                <div class="form-row">
+                    <input type="number" id="group-size" placeholder="Количество студентов" value="25" min="1" max="50" class="form-input">
+                    <input type="number" id="group-hours" placeholder="Макс часов в день" value="6" min="1" max="8" class="form-input">
+                </div>
+                <button onclick="addGroup()" class="form-btn btn-primary">
+                    <i class="fas fa-plus"></i> Добавить группу
+                </button>
+            </div>
+            <div class="setup-list" id="groups-list"></div>
+        </div>
+
+        <!-- Аудитории -->
+        <div class="setup-card">
+            <div class="setup-card-header">
+                <h3><i class="fas fa-building"></i> Аудитории</h3>
+                <span class="badge" id="room-count">0</span>
+            </div>
+            <div class="setup-form">
+                <div class="form-row">
+                    <input type="text" id="room-name" placeholder="Название аудитории" class="form-input">
+                </div>
+                <div class="form-row">
+                    <input type="number" id="room-capacity" placeholder="Вместимость" value="30" min="1" class="form-input">
+                    <select id="room-type" class="form-select">
+                        <option value="lecture_hall">Лекционная</option>
+                        <option value="computer_class">Компьютерный класс</option>
+                    </select>
+                </div>
+                <button onclick="addRoom()" class="form-btn btn-primary">
+                    <i class="fas fa-plus"></i> Добавить аудиторию
+                </button>
+            </div>
+            <div class="setup-list" id="rooms-list"></div>
+        </div>
+
+        <!-- Курсы -->
+        <div class="setup-card">
+            <div class="setup-card-header">
+                <h3><i class="fas fa-book"></i> Курсы</h3>
+                <span class="badge" id="course-count">0</span>
+            </div>
+            <div class="setup-form">
+                <div class="form-row">
+                    <input type="text" id="course-name" placeholder="Название курса" class="form-input">
+                </div>
+                <div class="form-row">
+                    <select id="course-type" class="form-select">
+                        <option value="lecture">Лекция</option>
+                        <option value="practice">Практика</option>
+                    </select>
+                    <input type="number" id="course-hours" placeholder="Часов в неделю" value="2" min="1" max="10" class="form-input">
+                </div>
+                <div class="form-row">
+                    <select id="course-teacher" class="form-select">
+                        <option value="">Выберите преподавателя</option>
+                    </select>
+                    <select id="course-group" class="form-select">
+                        <option value="">Выберите группу</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <select id="course-room-type" class="form-select">
+                        <option value="lecture_hall">Лекционная</option>
+                        <option value="computer_class">Компьютерный класс</option>
+                    </select>
+                </div>
+                <button onclick="addCourse()" class="form-btn btn-primary">
+                    <i class="fas fa-plus"></i> Добавить курс
+                </button>
+            </div>
+            <div class="setup-list" id="courses-list"></div>
+        </div>
+    </div>
+
+    <div class="setup-actions">
+        <button onclick="window.location.href='/'" class="btn btn-secondary">
+            <i class="fas fa-home"></i> На главную
+        </button>
+        <button onclick="generateSchedule()" class="btn btn-success">
+            <i class="fas fa-magic"></i> Сгенерировать расписание
+        </button>
+    </div>
+</div>
+
+<script>
+// Функция для уведомлений
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <span>${message}</span>
+        <button onclick="this.parentElement.remove()">&times;</button>
+    `;
+    document.querySelector('.setup-container').prepend(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+
+// Управление выбором дней
+let selectedDays = [];
+
+function initDaysSelector() {
+    const dayCheckboxes = document.querySelectorAll('.day-checkbox input[type="checkbox"]');
+
+    // Обработчики для отдельных дней
+    dayCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                // Добавляем день в список
+                const dayValue = this.value;
+                if (!selectedDays.includes(dayValue)) {
+                    selectedDays.push(dayValue);
+                }
+            } else {
+                // Удаляем день из списка
+                const dayValue = this.value;
+                selectedDays = selectedDays.filter(d => d !== dayValue);
+            }
+        });
+    });
+}
+
+function getSelectedDaysString() {
+    if (selectedDays.length === 0) {
+        return '';
+    }
+
+    // Сортируем дни и возвращаем строку
+    return selectedDays.sort((a, b) => a - b).join(',');
+}
+
+function resetDaysSelector() {
+    const dayCheckboxes = document.querySelectorAll('.day-checkbox input[type="checkbox"]');
+    dayCheckboxes.forEach(cb => cb.checked = false);
+    selectedDays = [];
+}
+
+// Загрузка данных при открытии
+async function loadData() {
+    await renderTeachers();
+    await renderGroups();
+    await renderRooms();
+    await renderCourses();
+
+    // Загружаем преподавателей для выпадающего списка
+    const teachers = await fetch('/api/teachers').then(r => r.json());
+    const teacherSelect = document.getElementById('course-teacher');
+    teacherSelect.innerHTML = '<option value="">Выберите преподавателя</option>';
+    teachers.forEach(t => {
+        const option = document.createElement('option');
+        option.value = t.id;
+        option.textContent = t.name;
+        teacherSelect.appendChild(option);
+    });
+
+    // Загружаем группы для выпадающего списка
+    const groups = await fetch('/api/groups').then(r => r.json());
+    const groupSelect = document.getElementById('course-group');
+    groupSelect.innerHTML = '<option value="">Выберите группу</option>';
+    groups.forEach(g => {
+        const option = document.createElement('option');
+        option.value = g.id;
+        option.textContent = g.name;
+        groupSelect.appendChild(option);
+    });
+}
+
+// Функции для работы с преподавателями
+async function addTeacher() {
+    const name = document.getElementById('teacher-name').value;
+    const hours = document.getElementById('teacher-hours').value;
+    const days = getSelectedDaysString();
+
+    if (!name) {
+        showNotification('Введите ФИО преподавателя', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/teachers', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name, max_hours: hours, preferred_days: days})
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            document.getElementById('teacher-name').value = '';
+            document.getElementById('teacher-hours').value = '4';
+            resetDaysSelector();
+            await renderTeachers();
+            showNotification('Преподаватель добавлен', 'success');
+
+            // Обновляем список преподавателей в выпадающем списке курсов
+            const teachers = await fetch('/api/teachers').then(r => r.json());
+            const teacherSelect = document.getElementById('course-teacher');
+            teacherSelect.innerHTML = '<option value="">Выберите преподавателя</option>';
+            teachers.forEach(t => {
+                const option = document.createElement('option');
+                option.value = t.id;
+                option.textContent = t.name;
+                teacherSelect.appendChild(option);
+            });
+        }
+    } catch (error) {
+        showNotification('Ошибка: ' + error.message, 'error');
+    }
+}
+
+async function renderTeachers() {
+    try {
+        const teachers = await fetch('/api/teachers').then(r => r.json());
+        document.getElementById('teacher-count').textContent = teachers.length;
+
+        const container = document.getElementById('teachers-list');
+        if (teachers.length === 0) {
+            container.innerHTML = '<div class="empty-list">Нет преподавателей</div>';
+            return;
+        }
+
+        container.innerHTML = teachers.map(t => `
+            <div class="list-item">
+                <div>
+                    <strong>${t.name}</strong>
+                    <div class="item-meta">
+                        Макс: ${t.max_hours} ч/день
+                        ${t.preferred_days ? `<span class="days-badge">Дни: ${getDaysDisplay(t.preferred_days)}</span>` : ''}
+                    </div>
+                </div>
+                <button onclick="deleteTeacher(${t.id})" class="btn-icon btn-danger">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Ошибка загрузки преподавателей:', error);
+    }
+}
+
+function getDaysDisplay(daysString) {
+    if (!daysString) return '';
+
+    const daysMap = {
+        '1': 'Пн',
+        '2': 'Вт',
+        '3': 'Ср',
+        '4': 'Чт',
+        '5': 'Пт'
+    };
+
+    return daysString.split(',').map(d => daysMap[d] || d).join(', ');
+}
+
+async function deleteTeacher(id) {
+    if (!confirm('Удалить преподавателя?')) return;
+
+    try {
+        await fetch(`/api/teachers/${id}`, {method: 'DELETE'});
+        await renderTeachers();
+
+        // Обновляем список преподавателей в выпадающем списке курсов
+        const teachers = await fetch('/api/teachers').then(r => r.json());
+        const teacherSelect = document.getElementById('course-teacher');
+        teacherSelect.innerHTML = '<option value="">Выберите преподавателя</option>';
+        teachers.forEach(t => {
+            const option = document.createElement('option');
+            option.value = t.id;
+            option.textContent = t.name;
+            teacherSelect.appendChild(option);
+        });
+
+        showNotification('Преподаватель удален', 'success');
+    } catch (error) {
+        showNotification('Ошибка удаления', 'error');
+    }
+}
+
+// Функции для работы с группами
+async function addGroup() {
+    const name = document.getElementById('group-name').value;
+    const size = document.getElementById('group-size').value;
+    const hours = document.getElementById('group-hours').value;
+
+    if (!name) {
+        showNotification('Введите название группы', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/groups', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name, size, max_hours: hours})
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            document.getElementById('group-name').value = '';
+            document.getElementById('group-size').value = '25';
+            document.getElementById('group-hours').value = '6';
+            await renderGroups();
+            showNotification('Группа добавлена', 'success');
+
+            // Обновляем список групп в выпадающем списке курсов
+            const groups = await fetch('/api/groups').then(r => r.json());
+            const groupSelect = document.getElementById('course-group');
+            groupSelect.innerHTML = '<option value="">Выберите группу</option>';
+            groups.forEach(g => {
+                const option = document.createElement('option');
+                option.value = g.id;
+                option.textContent = g.name;
+                groupSelect.appendChild(option);
+            });
+        }
+    } catch (error) {
+        showNotification('Ошибка: ' + error.message, 'error');
+    }
+}
+
+async function renderGroups() {
+    try {
+        const groups = await fetch('/api/groups').then(r => r.json());
+        document.getElementById('group-count').textContent = groups.length;
+
+        const container = document.getElementById('groups-list');
+        if (groups.length === 0) {
+            container.innerHTML = '<div class="empty-list">Нет групп</div>';
+            return;
+        }
+
+        container.innerHTML = groups.map(g => `
+            <div class="list-item">
+                <div>
+                    <strong>${g.name}</strong>
+                    <div class="item-meta">Студентов: ${g.size} · Макс: ${g.max_hours} ч/день</div>
+                </div>
+                <button onclick="deleteGroup(${g.id})" class="btn-icon btn-danger">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Ошибка загрузки групп:', error);
+    }
+}
+
+async function deleteGroup(id) {
+    if (!confirm('Удалить группу?')) return;
+
+    try {
+        await fetch(`/api/groups/${id}`, {method: 'DELETE'});
+        await renderGroups();
+
+        // Обновляем список групп в выпадающем списке курсов
+        const groups = await fetch('/api/groups').then(r => r.json());
+        const groupSelect = document.getElementById('course-group');
+        groupSelect.innerHTML = '<option value="">Выберите группу</option>';
+        groups.forEach(g => {
+            const option = document.createElement('option');
+            option.value = g.id;
+            option.textContent = g.name;
+            groupSelect.appendChild(option);
+        });
+
+        showNotification('Группа удалена', 'success');
+    } catch (error) {
+        showNotification('Ошибка удаления', 'error');
+    }
+}
+
+// Функции для работы с аудиториями
+async function addRoom() {
+    const name = document.getElementById('room-name').value;
+    const capacity = document.getElementById('room-capacity').value;
+    const type = document.getElementById('room-type').value;
+
+    if (!name) {
+        showNotification('Введите название аудитории', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/rooms', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                name,
+                capacity,
+                type,
+                schedule: '1111111,1111111,1111111,1111111,1111111'
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            document.getElementById('room-name').value = '';
+            document.getElementById('room-capacity').value = '30';
+            await renderRooms();
+            showNotification('Аудитория добавлена', 'success');
+        }
+    } catch (error) {
+        showNotification('Ошибка: ' + error.message, 'error');
+    }
+}
+
+async function renderRooms() {
+    try {
+        const rooms = await fetch('/api/rooms').then(r => r.json());
+        document.getElementById('room-count').textContent = rooms.length;
+
+        const container = document.getElementById('rooms-list');
+        if (rooms.length === 0) {
+            container.innerHTML = '<div class="empty-list">Нет аудиторий</div>';
+            return;
+        }
+
+        container.innerHTML = rooms.map(r => `
+            <div class="list-item">
+                <div>
+                    <strong>${r.name}</strong>
+                    <div class="item-meta">Вместимость: ${r.capacity} · ${getRoomTypeName(r.type)}</div>
+                </div>
+                <button onclick="deleteRoom(${r.id})" class="btn-icon btn-danger">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Ошибка загрузки аудиторий:', error);
+    }
+}
+
+async function deleteRoom(id) {
+    if (!confirm('Удалить аудиторию?')) return;
+
+    try {
+        await fetch(`/api/rooms/${id}`, {method: 'DELETE'});
+        await renderRooms();
+        showNotification('Аудитория удалена', 'success');
+    } catch (error) {
+        showNotification('Ошибка удаления', 'error');
+    }
+}
+
+// Функции для работы с курсами
+async function addCourse() {
+    const name = document.getElementById('course-name').value;
+    const type = document.getElementById('course-type').value;
+    const hours = document.getElementById('course-hours').value;
+    const teacherId = document.getElementById('course-teacher').value;
+    const groupId = document.getElementById('course-group').value;
+    const roomType = document.getElementById('course-room-type').value;
+
+    if (!name || !teacherId || !groupId) {
+        showNotification('Заполните все обязательные поля', 'error');
+        return;
+    }
+
+    if (teacherId === "" || groupId === "") {
+        showNotification('Выберите преподавателя и группу', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/courses', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                name,
+                type,
+                hours: parseInt(hours),
+                teacher_id: parseInt(teacherId),
+                group_id: parseInt(groupId),
+                room_type: roomType
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            document.getElementById('course-name').value = '';
+            document.getElementById('course-hours').value = '2';
+            document.getElementById('course-teacher').value = '';
+            document.getElementById('course-group').value = '';
+            await renderCourses();
+            showNotification('Курс добавлен', 'success');
+        } else {
+            showNotification('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
+        }
+    } catch (error) {
+        showNotification('Ошибка: ' + error.message, 'error');
+    }
+}
+
+async function renderCourses() {
+    try {
+        const courses = await fetch('/api/courses').then(r => r.json());
+        document.getElementById('course-count').textContent = courses.length;
+
+        const container = document.getElementById('courses-list');
+        if (courses.length === 0) {
+            container.innerHTML = '<div class="empty-list">Нет курсов</div>';
+            return;
+        }
+
+        container.innerHTML = courses.map(c => `
+            <div class="list-item">
+                <div>
+                    <strong>${c.name}</strong>
+                    <div class="item-meta">
+                        ${getCourseTypeName(c.type)} (${c.hours} ч/нед) ·
+                        ${c.teacher_name || 'Преподаватель'} → ${c.group_name || 'Группа'}
+                    </div>
+                </div>
+                <button onclick="deleteCourse(${c.id})" class="btn-icon btn-danger">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Ошибка загрузки курсов:', error);
+    }
+}
+
+async function deleteCourse(id) {
+    if (!confirm('Удалить курс?')) return;
+
+    try {
+        await fetch(`/api/courses/${id}`, {method: 'DELETE'});
+        await renderCourses();
+        showNotification('Курс удален', 'success');
+    } catch (error) {
+        showNotification('Ошибка удаления', 'error');
+    }
+}
+
+// Вспомогательные функции
+function getRoomTypeName(type) {
+    const types = {
+        'lecture_hall': 'Лекционная',
+        'computer_class': 'Компьютерный класс',
+    };
+    return types[type] || type;
+}
+
+function getCourseTypeName(type) {
+    const types = {
+        'lecture': 'Лекция',
+        'practice': 'Практика',
+    };
+    return types[type] || type;
+}
+
+// Генерация расписания
+async function generateSchedule() {
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Генерация...';
+
+    try {
+        const response = await fetch('/api/generate-schedule', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            showNotification(data.message, 'success');
+            setTimeout(() => {
+                window.location.href = '/schedule';
+            }, 1500);
+        } else {
+            showNotification('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
+        }
+    } catch (error) {
+        showNotification('Ошибка сети: ' + error.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+
+// Инициализация
+document.addEventListener('DOMContentLoaded', function() {
+    initDaysSelector();
+    loadData();
+});
+</script>
+{% endblock %}

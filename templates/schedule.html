@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% if not current_user.is_authenticated %}
+<script>
+    window.location.href = "{{ url_for('login') }}";
+</script>
+{% endif %}
+
+{% block title %}Расписание{% endblock %}
+
+{% block content %}
+<div class="schedule-container">
+    <div class="schedule-header">
+        <h1><i class="fas fa-calendar-week"></i> Учебное расписание</h1>
+        <div class="schedule-actions">
+            <button onclick="generateSchedule()" class="btn btn-primary">
+                <i class="fas fa-sync-alt"></i> Перегенерировать
+            </button>
+            <button onclick="exportSchedule()" class="btn btn-success">
+                <i class="fas fa-download"></i> Экспорт
+            </button>
+            <button onclick="clearSchedule()" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Очистить
+            </button>
+        </div>
+    </div>
+
+    <div id="schedule-loading" class="loading">
+        <i class="fas fa-spinner fa-spin"></i> Загрузка расписания...
+    </div>
+
+    <div id="schedule-content" style="display: none;"></div>
+
+    <div id="no-schedule" class="empty-state" style="display: none;">
+        <i class="fas fa-calendar-times"></i>
+        <h3>Расписание не создано</h3>
+        <p>Нажмите "Сгенерировать", чтобы создать расписание</p>
+        <button onclick="generateSchedule()" class="btn btn-primary">
+            <i class="fas fa-magic"></i> Создать расписание
+        </button>
+    </div>
+</div>
+
+<script>
+let scheduleData = null;
+
+async function loadSchedule() {
+    const loadingElement = document.getElementById('schedule-loading');
+    const contentElement = document.getElementById('schedule-content');
+    const emptyElement = document.getElementById('no-schedule');
+
+    loadingElement.style.display = 'block';
+    contentElement.style.display = 'none';
+    emptyElement.style.display = 'none';
+
+    try {
+        const response = await fetch('/api/schedule');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success && data.total_slots > 0) {
+            scheduleData = data;
+            renderSchedule(data);
+            contentElement.style.display = 'block';
+        } else {
+            emptyElement.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error loading schedule:', error);
+        emptyElement.style.display = 'block';
+    } finally {
+        loadingElement.style.display = 'none';
+    }
+}
+
+function renderSchedule(data) {
+    const container = document.getElementById('schedule-content');
+
+    let html = `
+        <div class="schedule-header">
+            <h3>Учебное расписание</h3>
+            <div class="schedule-info">
+                <span><i class="fas fa-calendar-check"></i> ${data.total_slots} занятий</span>
+            </div>
+        </div>
+
+        <div class="schedule-table-container">
+            <table class="schedule-table">
+                <thead>
+                    <tr>
+                        <th class="time-header">Время</th>
+    `;
+
+    data.days.forEach(day => {
+        html += `<th>${day.name}</th>`;
+    });
+
+    html += `</tr></thead><tbody>`;
+
+    data.timeslots.forEach((timeslot, slotIndex) => {
+        html += `<tr><td class="time-cell">${timeslot.time}</td>`;
+
+        data.days.forEach(day => {
+            const slots = day.slots[slotIndex];
+            html += `<td class="day-cell">`;
+
+            if (slots && slots.length > 0) {
+                slots.forEach(slot => {
+                    html += `
+                        <div class="lesson-card">
+                            <div class="lesson-header">
+                                <strong>${slot.course.name || 'Курс'}</strong>
+                                <span class="lesson-type">${slot.course.type || 'лекция'}</span>
+                            </div>
+                            <div class="lesson-body">
+                                <div><i class="fas fa-user"></i> ${slot.teacher.name || 'Преподаватель'}</div>
+                                <div><i class="fas fa-users"></i> ${slot.group.name || 'Группа'}</div>
+                                <div><i class="fas fa-building"></i> ${slot.room.name || 'Аудитория'}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                html += `<div class="empty-lesson">—</div>`;
+            }
+
+            html += `</td>`;
+        });
+
+        html += `</tr>`;
+    });
+
+    html += `</tbody></table></div>`;
+
+    container.innerHTML = html;
+}
+
+async function generateSchedule() {
+    try {
+        const response = await fetch('/api/generate-schedule', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            setTimeout(loadSchedule, 1000);
+        }
+    } catch (error) {
+        console.error('Error generating schedule:', error);
+    }
+}
+
+async function clearSchedule() {
+    if (!confirm('Очистить все расписание?')) return;
+
+    try {
+        const response = await fetch('/api/clear-schedule', {
+            method: 'POST'
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            loadSchedule();
+        }
+    } catch (error) {
+        console.error('Error clearing schedule:', error);
+    }
+}
+
+function exportSchedule() {
+    if (!scheduleData || scheduleData.total_slots === 0) {
+        return;
+    }
+
+    let csv = 'День;Время;Курс;Тип;Преподаватель;Группа;Аудитория\n';
+
+    scheduleData.days.forEach(day => {
+        day.slots.forEach((slots, slotIndex) => {
+            if (slots && slots.length > 0) {
+                slots.forEach(slot => {
+                    const time = scheduleData.timeslots[slotIndex].time;
+                    csv += `${day.name};${time};${slot.course.name};${slot.course.type};`;
+                    csv += `${slot.teacher.name};${slot.group.name};${slot.room.name}\n`;
+                });
+            }
+        });
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', `schedule_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadSchedule();
+});
+</script>
+{% endblock %}

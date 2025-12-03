@@ -1,0 +1,65 @@
+<!-- upload.html -->
+{% extends 'base.html' %}
+
+{% block title %}Загрузка данных{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <h2><i class="fas fa-upload"></i> Загрузка данных</h2>
+
+        <form method="POST" enctype="multipart/form-data" class="upload-form">
+            <div class="form-group">
+                <label for="teachers"><i class="fas fa-chalkboard-teacher"></i> Преподаватели (teachers.csv)</label>
+                <input type="file" id="teachers" name="teachers" accept=".csv" class="form-input">
+            </div>
+
+            <div class="form-group">
+                <label for="groups"><i class="fas fa-users"></i> Группы (groups.csv)</label>
+                <input type="file" id="groups" name="groups" accept=".csv" class="form-input">
+            </div>
+
+            <div class="form-group">
+                <label for="courses"><i class="fas fa-book"></i> Курсы (courses.csv)</label>
+                <input type="file" id="courses" name="courses" accept=".csv" class="form-input">
+            </div>
+
+            <div class="form-group">
+                <label for="rooms"><i class="fas fa-building"></i> Аудитории (rooms.csv)</label>
+                <input type="file" id="rooms" name="rooms" accept=".csv" class="form-input">
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-cloud-upload-alt"></i> Загрузить все файлы
+                </button>
+                <a href="/" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Назад
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3><i class="fas fa-info-circle"></i> Формат файлов</h3>
+        <div class="file-formats">
+            <div class="format">
+                <h4>teachers.csv</h4>
+                <code>id,name,max_hours_per_day,preferred_days</code>
+            </div>
+            <div class="format">
+                <h4>groups.csv</h4>
+                <code>id,name,size,max_hours_per_day</code>
+            </div>
+            <div class="format">
+                <h4>courses.csv</h4>
+                <code>id,name,type,hours_per_week,teacher_id,group_id,room_type</code>
+            </div>
+            <div class="format">
+                <h4>rooms.csv</h4>
+                <code>id,name,capacity,type,available_hours</code>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
