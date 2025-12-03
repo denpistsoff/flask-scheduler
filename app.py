@@ -654,5 +654,4 @@ if __name__ == '__main__':
             db.session.commit()
             print("✅ Администратор создан (логин: admin, пароль: admin123)")
 
-    print("🚀 Сервер запущен: http://localhost:5000")
-    app.run(debug=True, port=5000)
+    app.run()
