@@ -1,3 +1,4 @@
+# app.py
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
@@ -5,11 +6,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import os
 
 app = Flask(__name__)
-
-# Конфигурация для PostgreSQL
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://scheduler_user:ваш_пароль@localhost/scheduler_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///scheduler.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'ваш-секретный-ключ-для-продакшена')
+app.config['SECRET_KEY'] = 'dev-secret-key-2025-very-secure-key'
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
@@ -639,12 +638,21 @@ def generate():
 
 if __name__ == '__main__':
     with app.app_context():
+        # Создаем папки
+        os.makedirs('templates', exist_ok=True)
+        os.makedirs('static/css', exist_ok=True)
+
+        # Создаем таблицы
         db.create_all()
-        # Создание администратора если его нет
+        print("✅ База данных создана")
+
+        # Создаем администратора если его нет
         if User.query.filter_by(username='admin').first() is None:
             admin = User(username='admin', email='admin@scheduler.ru', is_admin=True)
             admin.set_password('admin123')
             db.session.add(admin)
             db.session.commit()
+            print("✅ Администратор создан (логин: admin, пароль: admin123)")
 
-    app.run(host='0.0.0.0', port=5000)
+    print("🚀 Сервер запущен: http://localhost:5000")
+    app.run(debug=True, port=5000)
